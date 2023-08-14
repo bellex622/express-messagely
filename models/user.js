@@ -2,6 +2,7 @@
 
 const bcrypt = require("bcrypt");
 const { NotFoundError } = require("../expressError");
+const db = require("../db");
 
 /** User of the site. */
 
@@ -30,9 +31,8 @@ class User {
               phone,`,
       [username, password, first_name, last_name, phone],
     );
-    const user = result.rows[0];
 
-    return user;
+    return result.rows[0];
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
@@ -45,9 +45,9 @@ class User {
       [username]
       );
     const user = result.rows[0];
+    //return user?
 
-    return (await bcrypt.compare(password, user.password)) === true;
-
+    return user && await bcrypt.compare(password, user.password) === true;
   }
 
   /** Update last_login_at for user */
@@ -62,7 +62,7 @@ class User {
 
     const user = result.rows[0];
 
-    if (!user) throw new NotFoundError;
+    if (!user) throw new NotFoundError(`User not found: ${user}`);
   }
 
   /** All: basic info on all users:
@@ -102,12 +102,9 @@ class User {
       );
     const user = result.rows[0];
 
-    if (!user) throw new NotFoundError;
+    if (!user) throw new NotFoundError(`User not found: ${user}`);
 
     return user;
-
-
-
   }
 
   /** Return messages from this user.

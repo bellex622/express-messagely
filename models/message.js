@@ -1,6 +1,6 @@
 "use strict";
 
-/** Message class for message.ly */
+/** Message class for messagely */
 
 const { NotFoundError } = require("../expressError");
 const db = require("../db");
