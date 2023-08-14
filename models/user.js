@@ -16,16 +16,27 @@ class User {
     //   password, 12);
 
     const result = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone, notes)
+      `INSERT INTO users (
+        username,
+        password,
+        first_name,
+        last_name,
+        phone,
+        notes
+        )
             VALUES ($1, $2, $3, $4, $5)
-            RETURNING username, password, first_name, last_name, phone, notes`,
+            RETURNING
+              username,
+              password,
+              first_name,
+              last_name,
+              phone,
+              notes`,
       [username, password, first_name, last_name, phone],
-
     );
     const user = result.rows[0];
 
     return user;
-
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
