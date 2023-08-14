@@ -108,25 +108,33 @@ class User {
     const results = await db.query(
       `SELECT m.id,
         m.to_username,
+        u.username,
+        u.first_name,
+        u.last_name,
+        u.phone,
         m.body,
         m.sent_at,
         m.read_at
       FROM messages As m
-          JOIN users ON m.from_username = $1`,
+          JOIN users as u ON m.to_username = u.username
+          WHERE m.from_username = $1;`,
       [username]
     );
 
     messages = results.rows;
 
-    const toUsernames = results.rows.map(row => row.to_username);
-
-
-
-
-
-
-
-
+    const messages = results.rows.map(row => ({
+      id: m.id,
+      to_user: {
+        username: m.to_username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone,
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    }));
 
   }
 
