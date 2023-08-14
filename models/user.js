@@ -12,9 +12,6 @@ class User {
 
   static async register({ username, password, first_name, last_name, phone }) {
 
-    // const hashedPassword = await bcrypt.hash(
-    //   password, 12);
-
     const result = await db.query(
       `INSERT INTO users (
         username,
@@ -42,6 +39,16 @@ class User {
   /** Authenticate: is username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
+    const result = await db.query(
+      "SELECT password FROM users WHERE username = $1",
+      [username]);
+    const user = result.rows[0];
+
+    if (await bcrypt.compare(password, user.password) === true) {
+      return true;
+    }
+
+    return false;
   }
 
   /** Update last_login_at for user */
