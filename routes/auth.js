@@ -16,11 +16,6 @@ router.post("/login", async function (req, res, next) {
   if (req.body === undefined) throw new BadRequestError();
   const { username, password } = req.body;
 
-  const result = await db.query(
-    "SELECT password FROM users WHERE username = $1",
-    [username]);
-
-  const user = result.rows[0];
   const authenticated = await User.authenticate(username, password);
 
   if (authenticated) {
@@ -37,11 +32,11 @@ router.post("/login", async function (req, res, next) {
 
 router.post("/register", async function (req, res, next) {
   if (req.body === undefined) throw new BadRequestError();
-  // const { username, password, first_name, last_name, phone, notes } = req.body;
-  hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
-  req.body.password = hashedPassword;
+  const { username, password, first_name, last_name, phone} = req.body;
+  password = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 
-  const user = await User.register(req.body);
+
+  const user = await User.register({username, password, first_name, last_name, phone});
 });
 
 module.exports = router;

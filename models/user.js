@@ -1,6 +1,7 @@
 "use strict";
 
 const bcrypt = require("bcrypt");
+const { NotFoundError } = require("../expressError");
 
 /** User of the site. */
 
@@ -18,8 +19,7 @@ class User {
         password,
         first_name,
         last_name,
-        phone,
-        notes
+        phone
         )
             VALUES ($1, $2, $3, $4, $5)
             RETURNING
@@ -27,8 +27,7 @@ class User {
               password,
               first_name,
               last_name,
-              phone,
-              notes`,
+              phone,`,
       [username, password, first_name, last_name, phone],
     );
     const user = result.rows[0];
@@ -40,26 +39,37 @@ class User {
 
   static async authenticate(username, password) {
     const result = await db.query(
-      "SELECT password FROM users WHERE username = $1",
+      `SELECT password FROM users WHERE username = $1`,
       [username]);
     const user = result.rows[0];
 
-    if (await bcrypt.compare(password, user.password) === true) {
-      return true;
-    }
+    return (await bcrypt.compare(password, user.password)) === true;
 
-    return false;
   }
 
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
+    const result = await db.query(
+      `UPDATE users SET last_login_time = CURRENT_TIMESTAMP
+      WHERE username = $1 RETURNING username`,
+      [username]);
+
+    const user = result.rows[0];
+
+    if (!user) throw new NotFoundError;
+
+
   }
 
   /** All: basic info on all users:
    * [{username, first_name, last_name}, ...] */
 
   static async all() {
+    const results = await db.query(
+      `SELECT username,first_name,last_name,FROM users ORDER BY username`);
+
+    return results.rows;
   }
 
   /** Get: get user by username
@@ -72,6 +82,18 @@ class User {
    *          last_login_at } */
 
   static async get(username) {
+    const result = await db.query(
+      `SELECT username, first_name, last_name, phone, join_at, last_login_at
+       FROM users WHERE username = $1`,
+      [username]);
+    const user = result.rows[0];
+
+    if (!user) throw new NotFoundError;
+
+    return user;
+
+
+
   }
 
   /** Return messages from this user.
@@ -83,6 +105,29 @@ class User {
    */
 
   static async messagesFrom(username) {
+    const results = await db.query(
+      `SELECT m.id,
+        m.to_username,
+        m.body,
+        m.sent_at,
+        m.read_at
+      FROM messages As m
+          JOIN users ON m.from_username = $1`,
+      [username]
+    );
+
+    messages = results.rows;
+
+    const toUsernames = results.rows.map(row => row.to_username);
+
+
+
+
+
+
+
+
+
   }
 
   /** Return messages to this user.
