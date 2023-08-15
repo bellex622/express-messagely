@@ -19,8 +19,13 @@ router.post("/login", async function (req, res, next) {
   const authenticated = await User.authenticate(username, password);
 
   if (authenticated) {
-    const token = jwt.sign({ username }, SECRET_KEY);
-    await User.updateLoginTimestamp();
+    const token = jwt.sign(
+      { username: username,
+        iat: (new Date().getTime())
+        //set manually?
+      },
+        SECRET_KEY);
+    await User.updateLoginTimestamp(username);
     return res.json({ token });
   } else {
 
@@ -39,11 +44,16 @@ router.post("/register", async function (req, res, next) {
 
   const { username } = await User.register(req.body);
 
-  await User.updateLoginTimestamp();// await?
+  await User.updateLoginTimestamp(username);// await?
 
-  const token = jwt.sign({ username }, SECRET_KEY);
+  const token = jwt.sign(
+    { username: username,
+      iat: (new Date().getTime())
+      //set manually?
+    },
+      SECRET_KEY);
+
   return res.json({ token });
-
 });
 
 module.exports = router;
