@@ -8,7 +8,7 @@ const { BadRequestError, UnauthorizedError } = require("../expressError");
 const User = require("../models/user");
 
 const jwt = require("jsonwebtoken");
-const JWT_OPTIONS = { expiresIn: 60 * 60 };
+// const JWT_OPTIONS = { expiresIn: 60 * 60 };
 
 /** POST /login: {username, password} => {token} */
 
@@ -26,6 +26,10 @@ router.post("/login", async function (req, res, next) {
       },
         SECRET_KEY);
     await User.updateLoginTimestamp(username);
+
+    const payload = jwt.verify(token, SECRET_KEY);
+    res.locals.user = payload;
+
     return res.json({ token });
   } else {
 
@@ -55,5 +59,24 @@ router.post("/register", async function (req, res, next) {
 
   return res.json({ token });
 });
+
+function ensureLoggedIn(req, res, next) {
+  const user = res.locals.user;
+  if (user && user.username) {
+    return next();
+  }
+  throw new UnauthorizedError();
+}
+
+function authenticateJWT(req, res, next) {
+  try {
+    const tokenFromRequest = req.query?._token || req.body?._token;
+    const payload = jwt.verify(tokenFromRequest, SECRET_KEY);
+    res.locals.user = payload;
+    return next();
+  } catch (err) {
+    return next();
+  }
+}
 
 module.exports = router;
