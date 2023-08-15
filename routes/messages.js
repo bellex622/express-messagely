@@ -1,7 +1,13 @@
 "use strict";
 
 const Router = require("express").Router;
+
 const router = new Router();
+const { UnauthorizedError } = require("../expressError");
+const Message = require("../models/message");
+const jwt = require("jsonwebtoken");
+
+const {ensureLoggedIn} = require("../middleware/auth");
 
 /** GET /:id - get detail of message.
  *
@@ -15,6 +21,26 @@ const router = new Router();
  * Makes sure that the currently-logged-in users is either the to or from user.
  *
  **/
+router.get("/:id",
+  ensureLoggedIn,
+  async function (req, res, next) {
+
+    const id = req.params.id;
+    const message = await Message.get(id);
+    const currentUsername = res.locals.user.username;
+    const toUserName = message.to_user.username;
+    const fromUserName = message.from_user.username;
+
+    if (currentUsername !== toUserName || currentUsername !== fromUserName) {
+      throw new UnauthorizedError();
+    }
+
+    return res.json({ message });
+
+
+  }
+
+);
 
 
 /** POST / - post message.
@@ -24,6 +50,26 @@ const router = new Router();
  *
  **/
 
+router.post("/",
+  ensureLoggedIn,
+  async function (req, res, next) {
+    const fromUserName = res.locals.user.username;
+    const toUserName = req.body.to_username;
+    const body = req.body.body;
+
+    const message = await Message.create({
+      from_username: fromUserName,
+      to_username: toUserName,
+      body: body
+    });
+
+
+    return res.json({ message });
+
+
+  }
+);
+
 
 /** POST/:id/read - mark message as read:
  *
@@ -32,6 +78,27 @@ const router = new Router();
  * Makes sure that the only the intended recipient can mark as read.
  *
  **/
+
+router.post("/:id/read",
+  ensureLoggedIn,
+  async function (req, res, next) {
+    const id = req.params.id;
+
+    const unreadMessage = await Message.get(id);
+    const toUserName = unreadMessage.to_user.username;
+    const currentUsername = res.locals.user.username;
+
+    if (currentUsername === toUserName) {
+      const message = await Message.markRead(id);
+      return res.json({ message });
+    }
+
+    throw new UnauthorizedError();
+
+  }
+);
+
+
 
 
 module.exports = router;

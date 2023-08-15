@@ -38,9 +38,17 @@ function ensureCorrectUser(req, res, next) {
 
 if (!currentUser || hasUnauthorizedUsername){
   throw new UnauthorizedError();
-} 
+}
 
   return next();
+}
+
+function ensureLoggedIn(req, res, next) {
+  const user = res.locals.user;
+  if (user && user.username) {
+    return next();
+  }
+  throw new UnauthorizedError();
 }
 
 
@@ -49,3 +57,4 @@ module.exports = {
   ensureLoggedIn,
   ensureCorrectUser,
 };
+

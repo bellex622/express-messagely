@@ -57,9 +57,13 @@ router.post("/register", async function (req, res, next) {
     },
       SECRET_KEY);
 
+    const payload = jwt.verify(token, SECRET_KEY);
+    res.locals.user = payload;
+
   return res.json({ token });
 });
 
+/** check if any loggedin-user, raise UnauthorizedError if no loggedin-usr  */
 function ensureLoggedIn(req, res, next) {
   const user = res.locals.user;
   if (user && user.username) {
@@ -67,6 +71,7 @@ function ensureLoggedIn(req, res, next) {
   }
   throw new UnauthorizedError();
 }
+
 
 function authenticateJWT(req, res, next) {
   try {
